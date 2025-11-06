@@ -1,3 +1,12 @@
+$accent: #ffa733;
+$accent-strong: #ff9f1a;
+$danger: #ff6262;
+$text-light: #e9eefc;
+$bg-dark: rgba(8, 15, 30, 0.55);
+$bg-card: rgba(20, 26, 38, 0.55);
+$glass-border: rgba(255, 255, 255, 0.08);
+$glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+
 .body-cotizador {
   font-family: "Roboto", sans-serif;
   background-image: url(../img/ideas/portada-2xoren.jpg);
@@ -6,34 +15,226 @@
   background-size: cover;
   background-attachment: fixed;
   color: white;
+  position: relative;
 
-  main {
-    width: 100%;
+  &::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(8, 15, 30, 0.65),
+      rgba(8, 15, 30, 0.45)
+    );
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+.glass-card {
+  background: $bg-card;
+  border: 1px solid $glass-border;
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color: $text-light;
+}
+
+.text-accent {
+  color: $accent;
+  font-weight: 600;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+.totals-list {
+  list-style: none;
+  margin: 0 0 0.5rem 0;
+  padding: 0;
+
+  li {
     display: flex;
     align-items: center;
-    flex-direction: column;
-    min-height: 80vh;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    font-size: 1rem;
 
-    h2 {
-      color: orange;
+    &::before {
+      content: "";
+      width: 0.6rem;
+      height: 0.6rem;
+      border-radius: 50%;
+      background: #8ab4f8;
+      display: inline-block;
     }
   }
 }
 
-.ultima {
-  padding-bottom: 5rem;
-  padding-top: 5rem;
-  width: 20rem;
-  display: flex;
-  justify-content: space-around;
+.btn-primary {
+  background-color: $accent-strong;
+  border-color: $accent-strong;
+  color: #0c0c0c;
+  font-weight: 600;
+
+  &:hover {
+    background-color: $accent;
+    border-color: $accent;
+    transform: translateY(-1px);
+  }
 }
 
-.contenido {
-  display: none;
-  margin-top: 20px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  min-width: 60vw;
-  justify-content: center;
+.btn-outline-danger {
+  color: $danger !important;
+  border-color: $danger !important;
+  font-weight: 600;
+
+  &:hover {
+    background-color: $danger !important;
+    color: #fff !important;
+  }
+}
+
+.btn-soft {
+  --btn-bg: rgba(255, 255, 255, 0.08);
+  --btn-bd: rgba(255, 255, 255, 0.18);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-bd);
+  color: $text-light;
+  transition:
+    transform 0.06s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.28);
+    transform: translateY(-1px);
+  }
+}
+
+#botonLimpiar {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffc861;
+  font-weight: 600;
+
+  &:hover {
+    background: $danger;
+    border-color: $danger;
+    color: #fff;
+  }
+}
+
+#botonLimpiarHistorial {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffb366;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+
+  &:hover {
+    background-color: $accent !important;
+    border-color: $accent !important;
+    color: #000 !important;
+  }
+}
+
+button:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid $accent;
+  outline-offset: 2px;
+}
+
+.table-wrapper {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table {
+  --bs-table-color: #e9eefc;
+  --bs-table-bg: rgba(255, 255, 255, 0.06);
+  --bs-table-border-color: rgba(255, 255, 255, 0.12);
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.06);
+  --bs-table-striped-color: #e9eefc;
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.06);
+  --bs-table-hover-color: #e9eefc;
+
+  background-color: transparent;
+
+  thead th {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--bs-table-color);
+    border-bottom-color: var(--bs-table-border-color);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  > :not(caption) > * > * {
+    background-color: var(--bs-table-bg) !important;
+    color: var(--bs-table-color);
+    border-color: var(--bs-table-border-color);
+  }
+
+  &.table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-accent-bg: var(--bs-table-striped-bg);
+    background-color: var(--bs-table-accent-bg) !important;
+  }
+
+  &.table-hover tbody tr:hover > * {
+    background-color: var(--bs-table-hover-bg) !important;
+    color: var(--bs-table-hover-color);
+  }
+}
+
+.glass-card {
+  .form-select,
+  .form-control {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #111;
+  }
+}
+
+#resumenGraficos {
+  background: rgba(10, 15, 25, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+
+  h5 {
+    color: $accent;
+    font-weight: 600;
+  }
+}
+
+.chart-card {
+  height: 280px;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #resumenGraficos {
+    padding: 1.5rem;
+  }
+
+  .chart-card {
+    height: 220px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
