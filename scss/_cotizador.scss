@@ -37,3 +37,22 @@
   min-width: 60vw;
   justify-content: center;
 }
+
+/* Validación visual básica (compat Bootstrap) */
+.is-invalid {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+.is-valid {
+  border-color: #198754 !important;
+  box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+/* Bloqueo general */
+body.busy {
+  cursor: progress !important;
+}
+body.busy #formularioCotizador {
+  opacity: 0.75;
+  pointer-events: none;
+}

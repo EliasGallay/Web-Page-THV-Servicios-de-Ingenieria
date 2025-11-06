@@ -1,181 +1,332 @@
-const montoDeObraHM = [36, 54, 182, 638, 910];
-const honorarioMinimoHM = [2.52, 3.51, 10.92, 35.09, 52.04];
-const valorHM = 350000;
-const valorKW = parseFloat(valorHM * 0.967);
-let presupuestoFinalCadista = 0;
-let presupuestoFinalInstalacionesElectricas = 0;
+// cotizadorServicios.js
+import {
+  calcularHonorarioMinimoHM,
+  calcularDigitalizacionPlanos,
+  calcularInstalacionElectrica,
+  calcularIngenieriaBasica,
+  calcularPiping,
+} from "./calculos.js";
+import { fmtARS } from "./config.js";
+import { debounce, setBusy, validatePositiveNumber, validateSelection } from "./utils.js";
+import { leerHistorial, escribirHistorial, renderHistorial } from "./historial.js";
+import { renderGraficoResumen } from "./charts.js";
+
+/** =========================
+ *  Estado + refs UI
+ *  ========================= */
 let total = 0;
-
 const menuOpciones = document.getElementById("menuOpciones");
-
 const input = document.getElementById("inputCotizador");
 
-menuOpciones.addEventListener("change", () => {
-  document.querySelectorAll(".contenido").forEach((div) => {
-    div.style.display = "none";
-  });
-  const opcSelected = document.querySelector(
-    `.contenido#${menuOpciones.value}`
-  );
-  const inputAndButton = document.getElementById("inputAndButton");
-  if (menuOpciones.value) {
-    inputAndButton.style.display = "block";
-  }
-
-  opcSelected.style.display = "block";
-  document.getElementById("inputCotizador").value = "";
-});
-
-function getData(form) {
-  var formData = new FormData(form);
-
-  for (var pair of formData.entries()) {
-    console.log(pair[0] + ": " + pair[1]);
-  }
-
-  return Object.fromEntries(formData);
-}
-
-document
-  .getElementById("formularioCotizador")
-  .addEventListener("submit", function (e) {
-    e.preventDefault();
-    const { opcionesCotizador, inputCotizador } = getData(e.target) || {};
-    switch (opcionesCotizador) {
-      // case 'maquinarias':
-      //     calculoRelevamientoDeMaquinarias();
-      //     break;
-      case "electricas":
-        calculoPresupuestoInstalacionElectrica(inputCotizador);
-        break;
-      case "planos":
-        calculoDigitalizacionDePlanos(inputCotizador);
-        break;
-      case "piping":
-        calculoPiping(inputCotizador);
-        break;
-      case "basica":
-        calculoIngenieriaBasicaDeProyecto(inputCotizador);
-        break;
-      default:
-        console.log("No hay opciones");
-    }
-    guardarPresupuestos();
-  });
-
-const calculoDigitalizacionDePlanos = (inputCotizador) => {
-  let valorHoraCadista = valorHM * 0.035;
-  let presupuestoFinalCadista = inputCotizador * valorHoraCadista;
-  console.log(presupuestoFinalCadista);
-  actualizartotal(presupuestoFinalCadista);
-  setTotalOf("finalCad", presupuestoFinalCadista);
+/** =========================
+ *  Helpers UI (locales)
+ *  ========================= */
+const setTotalOf = (valueId, value) => {
+  const el = document.getElementById(valueId);
+  if (!el) return;
+  el.dataset.raw = value != null ? String(value) : "0";
+  el.textContent = value != null ? fmtARS(value) : "";
 };
 
-const setTotalOf = (valueId, total) => {
-  document.getElementById(valueId).textContent = total;
-};
-
-const calculoPresupuestoInstalacionElectrica = (inputCotizador) => {
-  let potenciaInstalada = inputCotizador;
-
-  let valorInstalacionElectrica = potenciaInstalada * valorKW;
-  let valorDeInstalacionElectricaHM = valorInstalacionElectrica / valorHM;
-  let auxValor = valorDeInstalacionElectricaHM;
-  let contador = 0;
-
-  while (
-    contador < montoDeObraHM.length &&
-    auxValor > montoDeObraHM[contador]
-  ) {
-    auxValor -= montoDeObraHM[contador];
-    contador++;
-  }
-
-  let resto = auxValor * 0.05;
-  let auxHonorarioMinimo = 0;
-  for (let i = 0; i < contador; i++) {
-    auxHonorarioMinimo += honorarioMinimoHM[i];
-  }
-
-  let final = (auxHonorarioMinimo + resto) * valorHM;
-  actualizartotal(final);
-  setTotalOf("finalElectrica", final);
-};
-
-const calculoIngenieriaBasicaDeProyecto = (inputValue) => {
-  const presuCad = Number(document.getElementById("finalCad").textContent);
-  const presuObraElectrica = Number(
-    document.getElementById("finalElectrica").textContent
-  );
-  if ((presuCad || presuObraElectrica) <= 0) {
-    // alert('se debe calcular primero presupuesto cad y presupuesto obra electrica')
-    Swal.fire({
-      title: "Error!",
-      text: "se debe calcular primero presupuesto Digitalizacion de planos y presupuesto obra electrica",
-      icon: "error",
-      confirmButtonText: "Ok!",
-    });
-    return;
-  } else {
-    let montoDeObraCivil = inputValue;
-
-    let calculoObraCivil = montoDeObraCivil * 0.01;
-    let presuIngenieriaBasica =
-      presuCad + presuObraElectrica + calculoObraCivil;
-    actualizartotal(presuIngenieriaBasica);
-    setTotalOf("finalBasica", presuIngenieriaBasica);
-  }
-};
-
-const calculoPiping = (inputValue) => {
-  const horaCad = Number(document.getElementById("finalCad").textContent);
-  const obraElectrica = Number(
-    document.getElementById("finalElectrica").textContent
-  );
-  const valorMetroPiping = valorHM * 0.15;
-  const metrosLinealesPiping = inputValue;
-  const presupuestoPiping =
-    obraElectrica + horaCad + metrosLinealesPiping * valorMetroPiping;
-  actualizartotal(valorMetroPiping);
-  setTotalOf("finalPiping", presupuestoPiping);
-};
+const getRawNumber = (valueId) =>
+  Number(
+    document.getElementById(valueId)?.dataset?.raw ??
+      document.getElementById(valueId)?.textContent ??
+      0,
+  ) || 0;
 
 const actualizartotal = (valor) => {
-  total = valor + total;
+  total = (Number(total) || 0) + Number(valor || 0);
   setTotalOf("total", total);
 };
 
 const guardarPresupuestos = () => {
   const presupuestos = {
-    cadista: Number(document.getElementById("finalCad").textContent),
-    electricas: Number(document.getElementById("finalElectrica").textContent),
-    piping: Number(document.getElementById("finalPiping").textContent),
-    basica: Number(document.getElementById("finalBasica").textContent),
-    total: Number(document.getElementById("total").textContent),
+    cadista: getRawNumber("finalCad"),
+    electricas: getRawNumber("finalElectrica"),
+    piping: getRawNumber("finalPiping"),
+    basica: getRawNumber("finalBasica"),
+    total: getRawNumber("total"),
   };
   localStorage.setItem("presupuestos", JSON.stringify(presupuestos));
-  console.log(presupuestos);
 };
 
 const cargarPresupuestos = () => {
-  const presupuestos = JSON.parse(localStorage.getItem("presupuestos"));
-
-  setTotalOf("total", presupuestos.total);
-  setTotalOf("finalCad", presupuestos.cadista);
-  setTotalOf("finalElectrica", presupuestos.electricas);
-  setTotalOf("finalPiping", presupuestos.piping);
-  setTotalOf("finalBasica", presupuestos.basica);
+  const presupuestos = JSON.parse(localStorage.getItem("presupuestos") || "{}");
+  setTotalOf("total", presupuestos.total ?? 0);
+  setTotalOf("finalCad", presupuestos.cadista ?? 0);
+  setTotalOf("finalElectrica", presupuestos.electricas ?? 0);
+  setTotalOf("finalPiping", presupuestos.piping ?? 0);
+  setTotalOf("finalBasica", presupuestos.basica ?? 0);
+  total = getRawNumber("total");
 };
 
-window.addEventListener("load", () => {
-  cargarPresupuestos();
+/** =========================
+ *  Historial: composición
+ *  ========================= */
+const HIST_KEY = "historialPresupuestos";
+
+function snapshotPresupuestos() {
+  return {
+    cadista: getRawNumber("finalCad"),
+    electricas: getRawNumber("finalElectrica"),
+    piping: getRawNumber("finalPiping"),
+    basica: getRawNumber("finalBasica"),
+    total: getRawNumber("total"),
+  };
+}
+
+function addToHistorial(entry) {
+  const arr = leerHistorial();
+  arr.unshift({ ...entry, fecha: new Date().toISOString() });
+  escribirHistorial(arr);
+  renderHistorial();
+  renderGraficoResumen(snapshotPresupuestos()); // NUEVO: refresca gráfico tras escribir en historial
+}
+
+function recomputeEntry(item) {
+  const next = { ...item };
+
+  switch (item.tipo) {
+    case "planos": {
+      next.cadista = calcularDigitalizacionPlanos(item.input);
+      break;
+    }
+    case "electricas": {
+      next.electricas = calcularInstalacionElectrica(item.input);
+      break;
+    }
+    case "piping": {
+      const cad = Number(item.cadista || 0);
+      const elec = Number(item.electricas || 0);
+      next.piping = calcularPiping(cad, elec, item.input);
+      break;
+    }
+    case "basica": {
+      const cad = Number(item.cadista || 0);
+      const elec = Number(item.electricas || 0);
+      next.basica = calcularIngenieriaBasica(cad, elec, item.montoObraCivil || 0);
+      break;
+    }
+  }
+
+  next.total =
+    Number(next.cadista || 0) +
+    Number(next.electricas || 0) +
+    Number(next.piping || 0) +
+    Number(next.basica || 0);
+
+  next.fecha = new Date().toISOString();
+  return next;
+}
+
+/** =========================
+ *  Normalización select
+ *  ========================= */
+const normalizeKey = (v) =>
+  String(v || "")
+    .toLowerCase()
+    .replace(/^calcular\s+/, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+/** =========================
+ *  Eventos UI
+ *  ========================= */
+// Validación en vivo
+input?.addEventListener(
+  "input",
+  debounce(() => {
+    validatePositiveNumber(input.value, input);
+  }, 300),
+);
+
+// Cambio de opción
+menuOpciones?.addEventListener("change", () => {
+  document.querySelectorAll(".contenido").forEach((div) => (div.style.display = "none"));
+  const key = normalizeKey(menuOpciones.value);
+  const opcSelected = document.querySelector(`.contenido#${key}`);
+  const inputAndButton = document.getElementById("inputAndButton");
+  if (menuOpciones.value) inputAndButton.style.display = "block";
+  if (opcSelected) opcSelected.style.display = "block";
+
+  const i = document.getElementById("inputCotizador");
+  if (i) {
+    i.value = "";
+    i.classList.remove("is-invalid", "is-valid");
+  }
 });
 
-document.getElementById("botonLimpiar").addEventListener("click", () => {
+// Submit del formulario de cálculo
+document.getElementById("formularioCotizador")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const opcionesRaw = formData.get("opcionesCotizador");
+  const opcionesCotizador = normalizeKey(opcionesRaw);
+  const valStr = String(formData.get("inputCotizador") ?? "").trim();
+  const val = Number(valStr);
+  const inputEl = document.getElementById("inputCotizador");
+
+  if (!validateSelection(opcionesCotizador)) {
+    Swal.fire({
+      title: "Seleccioná una opción",
+      text: "Elegí el tipo de cálculo antes de enviar.",
+      icon: "info",
+      confirmButtonText: "Ok",
+    });
+    return;
+  }
+
+  if (!validatePositiveNumber(valStr, inputEl)) {
+    Swal.fire({
+      title: "Dato inválido",
+      text: "Ingresá un número mayor a 0.",
+      icon: "warning",
+      confirmButtonText: "Entendido",
+    });
+    return;
+  }
+
+  setBusy(true);
+  try {
+    switch (opcionesCotizador) {
+      case "electricas": {
+        const final = calcularInstalacionElectrica(val);
+        actualizartotal(final);
+        setTotalOf("finalElectrica", final);
+        break;
+      }
+      case "planos": {
+        const final = calcularDigitalizacionPlanos(val);
+        actualizartotal(final);
+        setTotalOf("finalCad", final);
+        break;
+      }
+      case "piping": {
+        const presuCad = getRawNumber("finalCad");
+        const presuElec = getRawNumber("finalElectrica");
+        const final = calcularPiping(presuCad, presuElec, val);
+        actualizartotal(final);
+        setTotalOf("finalPiping", final);
+        break;
+      }
+      case "basica": {
+        const presuCad = getRawNumber("finalCad");
+        const presuElec = getRawNumber("finalElectrica");
+        if (presuCad <= 0 || presuElec <= 0) {
+          Swal.fire({
+            title: "Falta información",
+            text: "Primero calculá Digitalización de Planos y Obra Eléctrica.",
+            icon: "error",
+            confirmButtonText: "Ok",
+          });
+          return;
+        }
+        const final = calcularIngenieriaBasica(presuCad, presuElec, val);
+        actualizartotal(final);
+        setTotalOf("finalBasica", final);
+        break;
+      }
+    }
+
+    guardarPresupuestos();
+    renderGraficoResumen(snapshotPresupuestos()); // NUEVO: refresca gráfico tras guardar
+
+    // Escribir en historial
+    addToHistorial({
+      tipo: opcionesCotizador,
+      input: val,
+      ...snapshotPresupuestos(),
+      ...(opcionesCotizador === "basica" ? { montoObraCivil: val } : {}),
+    });
+  } finally {
+    setBusy(false);
+  }
+});
+
+// Delegación de eventos del historial
+document.getElementById("historialBody")?.addEventListener("click", async (ev) => {
+  const btn = ev.target.closest("button");
+  if (!btn) return;
+
+  const action = btn.dataset.action;
+  const index = Number(btn.dataset.index);
+  const arr = leerHistorial();
+  const item = arr[index];
+  if (!item) return;
+
+  setBusy(true);
+  try {
+    if (action === "eliminar") {
+      arr.splice(index, 1);
+      escribirHistorial(arr);
+      renderHistorial();
+      renderGraficoResumen(snapshotPresupuestos()); // NUEVO: refresca gráfico tras eliminar historial
+      return;
+    }
+
+    if (action === "recalcular") {
+      const next = recomputeEntry(item);
+      arr[index] = next;
+      escribirHistorial(arr);
+      renderHistorial();
+      renderGraficoResumen(snapshotPresupuestos()); // NUEVO: refresca gráfico tras recalcular historial
+    }
+  } finally {
+    setBusy(false);
+  }
+});
+
+// Botón limpiar
+document.getElementById("botonLimpiar")?.addEventListener("click", () => {
   localStorage.removeItem("presupuestos");
-  setTotalOf("total");
-  setTotalOf("finalCad");
-  setTotalOf("finalElectrica");
-  setTotalOf("finalPiping");
-  setTotalOf("finalBasica");
+  total = 0;
+  setTotalOf("total", 0);
+  setTotalOf("finalCad", 0);
+  setTotalOf("finalElectrica", 0);
+  setTotalOf("finalPiping", 0);
+  setTotalOf("finalBasica", 0);
+  // Si también querés limpiar historial:
+  // localStorage.removeItem(HIST_KEY);
+  // renderHistorial();
+  renderGraficoResumen(snapshotPresupuestos()); // NUEVO: refresca gráfico al limpiar
+});
+
+// Init
+window.addEventListener("load", () => {
+  cargarPresupuestos();
+  renderHistorial();
+  renderGraficoResumen(snapshotPresupuestos()); // NUEVO: pinta gráfico inicial
+
+  // mostrar sección según valor inicial del select (si ya viene seteado)
+  const sel = document.getElementById("menuOpciones");
+  if (sel && sel.value) {
+    const key = normalizeKey(sel.value);
+    const opcSelected = document.querySelector(`.contenido#${key}`);
+    if (opcSelected) {
+      document.getElementById("inputAndButton")?.style?.setProperty("display", "block");
+      opcSelected.style.display = "block";
+    }
+  }
+});
+
+// Botón para limpiar historial completo
+document.getElementById("botonLimpiarHistorial")?.addEventListener("click", () => {
+  Swal.fire({
+    title: "¿Borrar todo el historial?",
+    text: "Se eliminarán todos los registros guardados.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Sí, borrar todo",
+    cancelButtonText: "Cancelar",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.removeItem("historialPresupuestos");
+      renderHistorial();
+      renderGraficoResumen(snapshotPresupuestos()); // NUEVO: refresca gráfico tras limpiar historial completo
+      Swal.fire("Historial eliminado", "Los registros fueron borrados.", "success");
+    }
+  });
 });
