@@ -1,7 +1,6 @@
-// calculos.js
 import { CONFIG } from "./config.js";
 
-/** Calcula el honorario mínimo por tramos usando reduce */
+/** Calcula el honorario mínimo por tramos */
 export function calcularHonorarioMinimoHM(valorHMNormalizado, cfg = CONFIG.HM) {
   const { montoDeObra, honorarioMinimo, valorHM } = cfg;
 
@@ -15,7 +14,7 @@ export function calcularHonorarioMinimoHM(valorHMNormalizado, cfg = CONFIG.HM) {
       }
       return acc;
     },
-    { remaining: Number(valorHMNormalizado) || 0, sumMin: 0 },
+    { remaining: Number(valorHMNormalizado) || 0, sumMin: 0 }
   );
 
   const resto = Math.max(0, acc.remaining) * 0.05;
@@ -39,13 +38,25 @@ export function calcularInstalacionElectrica(potenciaInstalada, cfg = CONFIG) {
 }
 
 /** Ingeniería Básica */
-export function calcularIngenieriaBasica(presuCad, presuElec, montoObraCivil, cfg = CONFIG) {
+export function calcularIngenieriaBasica(
+  presuCad,
+  presuElec,
+  montoObraCivil,
+  cfg = CONFIG
+) {
   const civil = Number(montoObraCivil) * cfg.FACTORES.obraCivil;
   return Number(presuCad) + Number(presuElec) + civil;
 }
 
 /** Piping */
-export function calcularPiping(presuCad, presuElec, metrosLineales, cfg = CONFIG) {
+export function calcularPiping(
+  presuCad,
+  presuElec,
+  metrosLineales,
+  cfg = CONFIG
+) {
   const valorMetro = cfg.HM.valorHM * cfg.FACTORES.pipingPorHM;
-  return Number(presuCad) + Number(presuElec) + Number(metrosLineales) * valorMetro;
+  return (
+    Number(presuCad) + Number(presuElec) + Number(metrosLineales) * valorMetro
+  );
 }

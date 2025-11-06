@@ -1,5 +1,3 @@
-// dolar.js
-/** Obtiene cotización del Dólar Blue */
 export async function obtenerDolarBlue() {
   try {
     const res = await fetch("https://api.bluelytics.com.ar/v2/latest");

@@ -1,4 +1,3 @@
-// main.js
 import { obtenerDolarBlue } from "./dolar.js";
 import { fmtARS } from "./config.js";
 import { renderHistorial } from "./historial.js";
@@ -10,12 +9,13 @@ function actualizarMonedaUI() {
   const celdas = document.querySelectorAll("[data-raw]");
   celdas.forEach((el) => {
     const raw = Number(el.dataset.raw || 0);
-    el.textContent = verEnUSD && dolarBlue ? `$ ${(raw / dolarBlue).toFixed(2)} USD` : fmtARS(raw);
+    el.textContent =
+      verEnUSD && dolarBlue
+        ? `$ ${(raw / dolarBlue).toFixed(2)} USD`
+        : fmtARS(raw);
   });
   renderHistorial(verEnUSD, dolarBlue || 0);
 }
-
-// Aseguramos que el botón exista antes de enganchar el click
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("toggleUSD");
   if (!btn) {
@@ -24,14 +24,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   btn.addEventListener("click", async () => {
-    // Si ya está en USD, volvemos a ARS sin pedir cotización
     if (verEnUSD) {
       verEnUSD = false;
       actualizarMonedaUI();
       return;
     }
 
-    // Pasar a USD: obtenemos cotización si hace falta
     try {
       btn.disabled = true;
       Swal.fire({
@@ -42,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (!dolarBlue) {
-        dolarBlue = await obtenerDolarBlue(); // puede lanzar
+        dolarBlue = await obtenerDolarBlue();
       }
 
       Swal.close();

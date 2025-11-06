@@ -1,10 +1,9 @@
-// charts.js
 let chartDonut = null;
 let chartBars = null;
 
 /**
- * Renderiza/actualiza los gráficos de composición a partir del "presupuestoActual"
- * @param {{ cadista:number, electricas:number, piping:number, basica:number, total:number }} p
+ * 
+  @param {{ cadista:number, electricas:number, piping:number, basica:number, total:number }} p
  */
 export function renderGraficoResumen(p) {
   const labels = ["CAD", "Eléctrica", "Piping", "Básica"];
@@ -15,10 +14,8 @@ export function renderGraficoResumen(p) {
     Number(p.basica || 0),
   ];
 
-  // Si no hay datos (>0), mostramos todo en cero pero evitando NaN
   const hasAny = data.some((v) => v > 0);
 
-  // Donut
   const ctxDonut = document.getElementById("chartResumenDonut");
   if (ctxDonut) {
     const donutCfg = {
@@ -35,7 +32,11 @@ export function renderGraficoResumen(p) {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          tooltip: { callbacks: { label: (c) => `${c.label}: ${c.raw?.toLocaleString("es-AR")}` } },
+          tooltip: {
+            callbacks: {
+              label: (c) => `${c.label}: ${c.raw?.toLocaleString("es-AR")}`,
+            },
+          },
           legend: { position: "bottom" },
           title: { display: true, text: "Distribución por rubro" },
         },
@@ -52,7 +53,6 @@ export function renderGraficoResumen(p) {
     }
   }
 
-  // Barras
   const ctxBars = document.getElementById("chartResumenBarras");
   if (ctxBars) {
     const barsCfg = {
@@ -72,7 +72,9 @@ export function renderGraficoResumen(p) {
         plugins: {
           legend: { display: false },
           title: { display: true, text: "Montos por rubro (ARS)" },
-          tooltip: { callbacks: { label: (c) => ` ${c.raw?.toLocaleString("es-AR")}` } },
+          tooltip: {
+            callbacks: { label: (c) => ` ${c.raw?.toLocaleString("es-AR")}` },
+          },
         },
         scales: {
           y: {

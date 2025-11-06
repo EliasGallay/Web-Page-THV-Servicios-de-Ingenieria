@@ -1,9 +1,7 @@
-// historial.js
 import { fmtARS, fmtUSD } from "./config.js";
 
 const HIST_KEY = "historialPresupuestos";
 
-// === helpers de storage ===
 export function leerHistorial() {
   try {
     return JSON.parse(localStorage.getItem(HIST_KEY) || "[]");
@@ -16,7 +14,6 @@ export function escribirHistorial(arr) {
   localStorage.setItem(HIST_KEY, JSON.stringify(Array.isArray(arr) ? arr : []));
 }
 
-// === render de la tabla ===
 export function renderHistorial(verEnUSD = false, dolarBlue = 0) {
   const tbody = document.getElementById("historialBody");
   if (!tbody) return;
@@ -25,7 +22,9 @@ export function renderHistorial(verEnUSD = false, dolarBlue = 0) {
   tbody.innerHTML = "";
 
   const asText = (raw) =>
-    verEnUSD && dolarBlue ? fmtUSD(Number(raw || 0) / dolarBlue) : fmtARS(raw || 0);
+    verEnUSD && dolarBlue
+      ? fmtUSD(Number(raw || 0) / dolarBlue)
+      : fmtARS(raw || 0);
 
   if (!data.length) {
     const tr = document.createElement("tr");
@@ -66,9 +65,18 @@ export function renderHistorial(verEnUSD = false, dolarBlue = 0) {
     tdTotal.textContent = asText(it.total);
 
     const tdAcc = document.createElement("td");
-    tdAcc.textContent = ""; // acá podés inyectar botones si querés
-
-    tr.append(tdFecha, tdTipo, tdInput, tdCad, tdElec, tdPip, tdBas, tdTotal, tdAcc);
+    tdAcc.textContent = "";
+    tr.append(
+      tdFecha,
+      tdTipo,
+      tdInput,
+      tdCad,
+      tdElec,
+      tdPip,
+      tdBas,
+      tdTotal,
+      tdAcc
+    );
     tbody.appendChild(tr);
   });
 }

@@ -1,4 +1,3 @@
-// config.js
 export const CONFIG = {
   HM: {
     montoDeObra: [36, 54, 182, 638, 910],
